@@ -22,12 +22,18 @@ def make_phi(X, M):
     #print ones.shape, X.shape, multinomial.shape
     return numpy.hstack([ones, X, multinomial])
 
+"""A sigmoid function, where X is a numpy array of any dimension"""
 def sigmoid(X):
-    denom = 1.0 + e ** (-1.0 * X)
+    denom = 1.0 + numpy.exp(-1.0 * X)
     return 1.0 / denom
 
-#def negLogLikelihood(w, theta, y, lamduh):
-#    return 
+def negLogLikelihoodGradient(w, phi, y, lamduh):
+    return phi.T.dot(sigmoid(w.T.dot(phi)) - y) + (lamduh * numpy.abs(w))
+
+def hessian(w, phi, y, lamduh):
+    n,phiD = phi.shape
+    R = (sigmoid(w.T.dot(phi.T)) * (1 - sigmoid(w.T.dot(phi.T)))) * numpy.eye(n)
+    return phi.T.dot(R.dot(phi))
 
 def compute_cost(theta, X, y):
     '''
