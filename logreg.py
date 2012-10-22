@@ -85,32 +85,9 @@ def fmin_bfgs_logreg(w, phi, y, lamduh):
 gtol = 1e-5
 #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh), gtol=gtol)
 #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh) )
+#w = w * 0
+w = w * -1.9
 print w
-w = w * 1.9
-print scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh))
+print scipy.optimize.fmin(negLogLikelihood, w, args=(phi, y, lamduh), maxfun=50000)
 #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh), gtol=0.1)
 #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh))
-
-def compute_cost(theta, X, y):
-    '''
-    Comput cost for logistic regression
-    '''
-    #Number of training samples
-    theta.shape = (1, 3)
-    m = y.size
-    h = sigmoid(X.dot(theta.T))
-    J = (1.0 / m) * ((-y.T.dot(log(h))) - ((1.0 - y.T).dot(log(1.0 - h))))
-    return - 1 * J.sum()
-
-def compute_grad(theta, X, y):
-    #print theta.shape
-    theta.shape = (1, 3)
-    grad = zeros(3)
-    h = sigmoid(X.dot(theta.T))
-    delta = h - y
-    l = grad.size
-    for i in range(l):
-        sumdelta = delta.T.dot(X[:, i])
-        grad[i] = (1.0 / m) * sumdelta * - 1
-    theta.shape = (3,)
-    return  grad
