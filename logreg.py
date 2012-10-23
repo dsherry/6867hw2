@@ -61,15 +61,6 @@ def irls(w, phi, y, lamduh):
         print w
         print n
 
-## test
-train = numpy.loadtxt('data/data_ls_train.csv')
-X = train[:,0:2]
-y = train[:,2:3]
-phi = make_phi(X,3)
-lamduh=0.1
-#w = numpy.zeros(phi.shape[1]).reshape(phi.shape[1],1)
-w = numpy.ones(phi.shape[1])
-
 def weightsWrapper(func):
     def wrapper(w, args):
         return func(w, args[0], args[1], args[2])
@@ -78,16 +69,25 @@ def weightsWrapper(func):
 #irls(w, phi, y, lamduh)
 
 def fmin_bfgs_logreg(w, phi, y, lamduh):
+    ## test
+    train = numpy.loadtxt('data/data_ls_train.csv')
+    X = train[:,0:2]
+    y = train[:,2:3]
+    phi = make_phi(X,3)
+    lamduh=0.1
+    #w = numpy.zeros(phi.shape[1]).reshape(phi.shape[1],1)
+    w = numpy.ones(phi.shape[1])
+
     #w = scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh))
     w = scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh))
     return w
-
-gtol = 1e-5
-#print scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh), gtol=gtol)
-#print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh) )
-#w = w * 0
-w = w * -1.9
-print w
-print scipy.optimize.fmin(negLogLikelihood, w, args=(phi, y, lamduh), maxfun=50000)
-#print scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh), gtol=0.1)
-#print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh))
+if __name__ == '__main__':
+    gtol = 1e-5
+    #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh), gtol=gtol)
+    #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh) )
+    #w = w * 0
+    w = w * -1.9
+    print w
+    print scipy.optimize.fmin(negLogLikelihood, w, args=(phi, y, lamduh), maxfun=50000)
+    #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh), gtol=0.1)
+    #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh))
