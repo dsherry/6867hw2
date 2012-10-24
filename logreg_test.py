@@ -3,7 +3,7 @@ from plotBoundary import *
 # import your LR training code
 
 # parameters
-data = 'ls'
+name = 'ls'
 print '======Training======'
 # load data from csv files
 train = loadtxt('data/data_'+name+'_train.csv')
@@ -19,7 +19,7 @@ plotDecisionBoundary(X, Y, predictLR, [0.5], title = 'LR Train')
 
 print '======Validation======'
 # load data from csv files
-validate = loadtxt('data/data_'+data+'_validate.csv')
+validate = loadtxt('data/data_'+name+'_validate.csv')
 X = validate[:,0:2]
 Y = validate[:,2:3]
 
