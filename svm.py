@@ -16,37 +16,27 @@ def primal(phi,y,C, debug=False):
     ## primal quad prog.
     ## let n be the number of data points, and let m be the number of features
     n,m = phi.shape
-    ## z is [w, b, eps].T
-    z = numpy.array([0]*m + [0] + [0]*n)
+
     Q = numpy.zeros((m+n+1,m+n+1))
     for i in range(m):
         Q[i,i] = 1
-    #print Q[0:7,0:7]
+
     c = numpy.vstack([numpy.zeros((m+1,1)), C*numpy.ones((n,1))])
-    #print c[0:10]
-    #A = numpy.zeros((n, m+1+n))
-    ## second major change here
+
     A = numpy.zeros((2*n, m+1+n))
     A[:n,0:m] = y*phi
-    ## first major change below
-    #A[:n,m] = 1
     A[:n,m] = y.T
     A[:n,m+1:]  = numpy.eye(n)
-    ## second major change here
     A[n:,m+1:] = numpy.eye(n)
     A = -A
-    #print A[1,:]
-    ## second major change here
-    #g = -numpy.ones((n,1))
+
     g = numpy.zeros((2*n,1))
     g[:n] = -1
-    # E and d are not used in the primal form
-    E = d = 0
+
+    ## E and d are not used in the primal form
     ## convert to array
     if debug:
         print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
-        #comp = numpy.vstack([Q,A])
-        #print comp.shape, numpy.linalg.matrix_rank(comp)
         print "n,m=",n,m
         print "Q:",Q.shape
         print Q
@@ -56,6 +46,7 @@ def primal(phi,y,C, debug=False):
         print A
         print "g:",g.shape
         print g
+    ## have to convert everything to cxvopt matrices
     Q = cvxopt.matrix(Q,Q.shape,'d')
     c = cvxopt.matrix(c,c.shape,'d')
     A = cvxopt.matrix(A,A.shape,'d')
@@ -71,14 +62,121 @@ def primal(phi,y,C, debug=False):
         print "g:",g.size
         print g
     ## set up cvxopt
-    #sol = cvxopt.solvers.qp(Q, c, A, g)
+    ## z (the vector being minimized for) in this case is [w, b, eps].T
     sol = cvxopt.solvers.qp(Q, c, A, g)
     return sol
 
-## the dual takes a kernel as well
-def dual(phi,y,C,K):
-    ## TODO finish this
-    pass
+## the dual takes a kernel function as well
+def dual(phi,y,C,K, debug=False):
+
+    ## primal quad prog.
+    ## let n be the number of data points, and let m be the number of features
+    n,m = phi.shape
+
+    ## the kernel function takes two 1xm x-vectors and returns a scalar
+    ## first, compute the nxn matrix K(x_i, x_j)
+    KM = numpy.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            KM[i,j] = K(phi[i,:], phi[j,:])
+    ## multiply in y_i*y_j
+    Q = y.dot(y.T) * KM
+
+    c = -numpy.ones((n,1))
+
+    A = numpy.zeros((2*n, n))
+    A[:n,:] = numpy.eye(n)
+    A[n:,:] = -numpy.eye(n)
+
+    g = numpy.zeros((2*n,1))
+    g[:n] = C
+
+    E = y.T
+
+    d = numpy.array([[0]])
+
+    ## convert to array
+    if debug:
+        print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
+        print "n,m=",n,m
+        print "Q:",Q.shape
+        print Q
+        print "c:",c.shape
+        print c
+        print "A:",A.shape
+        print A
+        print "g:",g.shape
+        print g
+        print "E:",E.shape
+        print E
+        print "d:",d.shape
+        print d
+    ## have to convert everything to cxvopt matrices
+    Q = cvxopt.matrix(Q,Q.shape,'d')
+    c = cvxopt.matrix(c,c.shape,'d')
+    A = cvxopt.matrix(A,A.shape,'d')
+    g = cvxopt.matrix(g,g.shape,'d')
+    E = cvxopt.matrix(E,E.shape,'d')
+    d = cvxopt.matrix(d,d.shape,'d')
+    if debug:
+        print "n,m=",n,m
+        print "Q:",Q.size
+        print Q
+        print "c:",c.size
+        print c
+        print "A:",A.size
+        print A
+        print "g:",g.size
+        print g
+        print "E:",E.size
+        print E
+        print "d:",d.size
+        print d
+    ## set up cvxopt
+    ## z (the vector being minimized for) in this case is [w, b, eps].T
+    sol = cvxopt.solvers.qp(Q, c, A, g, E, d)
+    return sol
+
+## given the alpha Lagrange coefficients from dual, calculate the weights and offset
+def dualWeights(x, y, K, alpha, C):
+    assert len(x.shape) > 1
+    n,m = x.shape
+    assert y.shape == (n,1)
+    assert alpha.shape == (n,1)
+    ## calculate weights
+    w = sum([alpha[i] * y[i] * x[i,:] for i in range(n)])
+    ## calculate offset b
+    ## get the indices of the support vectors
+    sIndices = [i for i in range(n) if alpha[i] > 0]
+    S = len(sIndices)
+    ## first count the number of data points for which 0 < alpha < C
+    mIndices = [i for i in range(n) if 0 < alpha[i] < C]
+    M = len(mIndices)
+    b = sum([y[j] - sum([alpha[i] * y[i] * K(x[i,:],x[j,:]) for i in sIndices]) for j in mIndices])/float(M)
+    return w, b, S, M
+
+## given an array with shape (r) or (r,1), will return one with shape (r,1)
+def fixSingleton(x):
+    return x.reshape((x.shape[0],1)) if len(x.shape) == 1 else x
+
+def fixSingletons(*args):
+    return [fixSingleton(z) for z in args]
+
+## nifty kallable Kernel wrapper klass
+class Kernel:
+    def __init__(self, K):
+        self.K = K
+    def __call__(self, a, b):
+        ## make sure they're 2d
+        a,b = fixSingletons(a,b)
+        for x,name in [(a,"a"),(b,"b")]:
+            assert x.shape[1] == 1, "Vector %s has shape %s" %(name, str(x.shape))
+        return self.K(a,b)
+
+## define a linear kernel function
+## a and be are each 1xm input vectors
+linearKernel = Kernel(lambda a,b: a.T.dot(b))
+
 
 if __name__=='__main__':
     # ## test out training
@@ -101,16 +199,22 @@ if __name__=='__main__':
     phiDummy = make_phi(xDummy,M)
     assert phiDummy.shape == (2,6)
     print phiDummy
-    #n,m = phiDummy.shape
-    n,m = xDummy.shape
+    n,m = phiDummy.shape
+    #n,m = xDummy.shape
     yDummy = numpy.array([[1], [-1]])
     assert yDummy.shape == (2,1)
 
-    # Carry out training, primal and/or dual
+    ## Carry out training, primal and/or dual
     C = 0.25
     #C = 111110
-    #p = primal(phiDummy,yDummy,C)
-    p2 = primal(xDummy,yDummy,C, debug=True)
-    w = numpy.array(p2['x'][:m])
-#    assert w.shape == (6,1)
-    b = p2['x'][m]
+    p = primal(phiDummy,yDummy,C, debug=True)
+    wP = numpy.array(p['x'][:m])
+    bP = p['x'][m]
+    xValidate = numpy.array([[100,0],[-100,231232],[0,123123123]])
+    yP = make_phi(xValidate,2).dot(wP) + bP
+    print yP>0
+
+    d = dual(phiDummy,yDummy,C, linearKernel, debug=True)
+    alphaD = numpy.array(d['x'])
+    print alphaD
+    w,b,S,M = dualWeights(phiDummy, yDummy, linearKernel, alphaD, C)
