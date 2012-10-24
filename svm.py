@@ -12,7 +12,7 @@ numpy.set_printoptions(threshold=numpy.nan)
 ## primal:
 ## input x, y, C
 
-def primal(phi,y,C):
+def primal(phi,y,C, debug=False):
     ## primal quad prog.
     ## let n be the number of data points, and let m be the number of features
     n,m = phi.shape
@@ -29,7 +29,7 @@ def primal(phi,y,C):
     A = numpy.zeros((2*n, m+1+n))
     A[:n,0:m] = y*phi
     ## first major change below
-    A[:n,m] = 1
+    #A[:n,m] = 1
     A[:n,m] = y.T
     A[:n,m+1:]  = numpy.eye(n)
     ## second major change here
@@ -43,31 +43,33 @@ def primal(phi,y,C):
     # E and d are not used in the primal form
     E = d = 0
     ## convert to array
-    print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
-    #comp = numpy.vstack([Q,A])
-    #print comp.shape, numpy.linalg.matrix_rank(comp)
-    print "n,m=",n,m
-    print "Q:",Q.shape
-    print Q
-    print "c:",c.shape
-    print c
-    print "A:",A.shape
-    print A
-    print "g:",g.shape
-    print g
+    if debug:
+        print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
+        #comp = numpy.vstack([Q,A])
+        #print comp.shape, numpy.linalg.matrix_rank(comp)
+        print "n,m=",n,m
+        print "Q:",Q.shape
+        print Q
+        print "c:",c.shape
+        print c
+        print "A:",A.shape
+        print A
+        print "g:",g.shape
+        print g
     Q = cvxopt.matrix(Q,Q.shape,'d')
     c = cvxopt.matrix(c,c.shape,'d')
     A = cvxopt.matrix(A,A.shape,'d')
     g = cvxopt.matrix(g,g.shape,'d')
-    print "n,m=",n,m
-    print "Q:",Q.size
-    print Q
-    print "c:",c.size
-    print c
-    print "A:",A.size
-    print A
-    print "g:",g.size
-    print g
+    if debug:
+        print "n,m=",n,m
+        print "Q:",Q.size
+        print Q
+        print "c:",c.size
+        print c
+        print "A:",A.size
+        print A
+        print "g:",g.size
+        print g
     ## set up cvxopt
     #sol = cvxopt.solvers.qp(Q, c, A, g)
     sol = cvxopt.solvers.qp(Q, c, A, g)
@@ -106,9 +108,9 @@ if __name__=='__main__':
 
     # Carry out training, primal and/or dual
     C = 0.25
-    C = 111110
+    #C = 111110
     #p = primal(phiDummy,yDummy,C)
-    p2 = primal(xDummy,yDummy,C)
+    p2 = primal(xDummy,yDummy,C, debug=True)
     w = numpy.array(p2['x'][:m])
 #    assert w.shape == (6,1)
     b = p2['x'][m]

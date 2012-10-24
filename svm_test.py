@@ -6,6 +6,7 @@ import numpy
 from logreg import make_phi
 
 M=2
+name = 'ls'
 
 # Define the predictSVM(x) function, which uses trained parameters
 def makePredictor(w,b,M):
@@ -18,9 +19,8 @@ def makePredictor(w,b,M):
         return 1 if val > 0 else -1
     return predict
 
-def train():
+def train(name,C=1):
     # parameters
-    name = 'ls'
     print '======Training======'
     # load data from csv files
     train = loadtxt('data/data_'+name+'_train.csv')
@@ -32,21 +32,25 @@ def train():
     Y = train[:, 2:3].copy()
 
     # Carry out training, primal and/or dual
-    p = svm.primal(phi,Y,0.01)
+    p = svm.primal(phi,Y,C)
     w = numpy.array(p['x'][:m])
     b = p['x'][m]
 
+    # make predictor
     predictSVM = makePredictor(w,b,M)
 
     # plot training results
     plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Train')
 
-def validate():
     print '======Validation======'
     # load data from csv files
     validate = loadtxt('data/data_'+name+'_validate.csv')
     X = validate[:, 0:2]
     Y = validate[:, 2:3]
+
+    # make predictor
+    predictSVM = makePredictor(w,b,M)
+
     # plot validation results
     plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Validate')
 
@@ -62,9 +66,10 @@ def dummy():
 
     # Carry out training, primal and/or dual
     C = 10e10
+    C = 0.25
     p = svm.primal(phiDummy,yDummy,C)
     w = numpy.array(p['x'][:m])
-    assert w.shape == (1,6)
+    assert w.shape == (6,1)
     b = p['x'][m]
     assert isinstance(b, (int,float))
     dummyPredictor = makePredictor(w,b,M)
@@ -72,5 +77,6 @@ def dummy():
     plotDecisionBoundary(xDummy, yDummy, dummyPredictor, [-1, 0, 1], title = 'SVM Validate')
 
 if __name__=='__main__':
-    dummy()
+    train('ls')
+    #dummy()
     #pl.show()
