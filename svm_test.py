@@ -13,7 +13,7 @@ def makePredictor(w,b,M):
     def predict(x):
         #print x.shape, w.shape
         ## transform into feature space
-        phi = make_phi(x,M)
+        phi = make_phi(x)
         #print phi.shape, w.shape
         val = phi.dot(w) + b
         return 1 if val > 0 else -1
@@ -27,7 +27,7 @@ def train(name,C=1):
     # use deep copy here to make cvxopt happy
     X = train[:, 0:2].copy()
     M=2
-    phi = make_phi(X,M)
+    phi = make_phi(X)
     n,m = phi.shape
     Y = train[:, 2:3].copy()
 
@@ -58,7 +58,7 @@ def dummy():
     ## a very simple test
     xDummy = numpy.array([[0,0],[1,1],[1,2]])
     assert xDummy.shape == (3,2)
-    phiDummy = make_phi(xDummy,M)
+    phiDummy = make_phi(xDummy)
     assert phiDummy.shape == (3,6)
     n,m = phiDummy.shape
     yDummy = numpy.array([[-1], [1], [1]])

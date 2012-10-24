@@ -186,7 +186,7 @@ if __name__=='__main__':
     # train = numpy.loadtxt('data/data_'+name+'_train.csv')
     # x = train[:, 0:2].copy()
     # M = 2
-    # phi = make_phi(x,M)
+    # phi = make_phi(x)
     # y = train[:, 2:3].copy()
     # C = .01
 
@@ -198,7 +198,7 @@ if __name__=='__main__':
     M = 2
     xDummy = numpy.array([[1,0],[-1,0]])
     assert xDummy.shape == (2,2)
-    phiDummy = make_phi(xDummy,M)
+    phiDummy = make_phi(xDummy)
     assert phiDummy.shape == (2,6)
     print phiDummy
     n,m = phiDummy.shape
@@ -213,7 +213,7 @@ if __name__=='__main__':
     wP = numpy.array(p['x'][:m])
     bP = p['x'][m]
     xValidate = numpy.array([[100,0],[-100,231232],[0,123123123]])
-    yP = make_phi(xValidate,2).dot(wP) + bP
+    yP = make_phi(xValidate).dot(wP) + bP
     print yP>0
 
     d = dual(phiDummy,yDummy,C, linearKernel, debug=True)
