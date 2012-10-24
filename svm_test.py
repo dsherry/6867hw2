@@ -3,21 +3,8 @@ from plotBoundary import *
 # import your SVM training code
 import svm
 import numpy
-from logreg import make_phi
-
-M=2
-name = 'ls'
-
-# Define the predictSVM(x) function, which uses trained parameters
-def makePredictor(w,b,M):
-    def predict(x):
-        #print x.shape, w.shape
-        ## transform into feature space
-        phi = make_phi(x)
-        #print phi.shape, w.shape
-        val = phi.dot(w) + b
-        return 1 if val > 0 else -1
-    return predict
+from utils import *
+from svm import *
 
 def train(name,C=1):
     # parameters
@@ -26,7 +13,6 @@ def train(name,C=1):
     train = loadtxt('data/data_'+name+'_train.csv')
     # use deep copy here to make cvxopt happy
     X = train[:, 0:2].copy()
-    M=2
     phi = make_phi(X)
     n,m = phi.shape
     Y = train[:, 2:3].copy()
@@ -37,7 +23,7 @@ def train(name,C=1):
     b = p['x'][m]
 
     # make predictor
-    predictSVM = makePredictor(w,b,M)
+    predictSVM = makePredictor(w,b,'svm')
 
     # plot training results
     plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Train')
@@ -49,10 +35,14 @@ def train(name,C=1):
     Y = validate[:, 2:3]
 
     # make predictor
-    predictSVM = makePredictor(w,b,M)
+    predictSVM = makePredictor(w,b,'svm')
 
     # plot validation results
     plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Validate')
+
+    # print validation error
+    err = validationError(X, Y, w, b, mode='svm')
+    print err
 
 def dummy():
     ## a very simple test
@@ -72,11 +62,13 @@ def dummy():
     assert w.shape == (6,1)
     b = p['x'][m]
     assert isinstance(b, (int,float))
-    dummyPredictor = makePredictor(w,b,M)
+    dummyPredictor = makePredictor(w,b,'svm')
 
     plotDecisionBoundary(xDummy, yDummy, dummyPredictor, [-1, 0, 1], title = 'SVM Validate')
 
 if __name__=='__main__':
-    train('ls')
-    #dummy()
-    #pl.show()
+    train('ls',C=0)
+    train('ls',C=0.01)
+    train('ls',C=0.1)
+    train('ls',C=1)
+    train('ls',C=10)

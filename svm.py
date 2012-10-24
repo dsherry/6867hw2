@@ -6,61 +6,34 @@ import numpy
 import scipy.optimize
 import cvxopt, cvxopt.solvers
 
-from logreg import make_phi
+from utils import *
+
 numpy.set_printoptions(threshold=numpy.nan)
 
-## primal:
-## input x, y, C
-
+## primal SVM
 def primal(phi,y,C, debug=False):
     ## primal quad prog.
     ## let n be the number of data points, and let m be the number of features
     n,m = phi.shape
-
     Q = numpy.zeros((m+n+1,m+n+1))
     for i in range(m):
         Q[i,i] = 1
-
     c = numpy.vstack([numpy.zeros((m+1,1)), C*numpy.ones((n,1))])
-
     A = numpy.zeros((2*n, m+1+n))
     A[:n,0:m] = y*phi
     A[:n,m] = y.T
     A[:n,m+1:]  = numpy.eye(n)
     A[n:,m+1:] = numpy.eye(n)
     A = -A
-
     g = numpy.zeros((2*n,1))
     g[:n] = -1
-
     ## E and d are not used in the primal form
     ## convert to array
-    if debug:
-        print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
-        print "n,m=",n,m
-        print "Q:",Q.shape
-        print Q
-        print "c:",c.shape
-        print c
-        print "A:",A.shape
-        print A
-        print "g:",g.shape
-        print g
     ## have to convert everything to cxvopt matrices
     Q = cvxopt.matrix(Q,Q.shape,'d')
     c = cvxopt.matrix(c,c.shape,'d')
     A = cvxopt.matrix(A,A.shape,'d')
     g = cvxopt.matrix(g,g.shape,'d')
-    if debug:
-        print "n,m=",n,m
-        print "Q:",Q.size
-        print Q
-        print "c:",c.size
-        print c
-        print "A:",A.size
-        print A
-        print "g:",g.size
-        print g
     ## set up cvxopt
     ## z (the vector being minimized for) in this case is [w, b, eps].T
     sol = cvxopt.solvers.qp(Q, c, A, g)
@@ -68,11 +41,9 @@ def primal(phi,y,C, debug=False):
 
 ## the dual takes a kernel function as well
 def dual(phi,y,C,K, debug=False):
-
     ## primal quad prog.
     ## let n be the number of data points, and let m be the number of features
     n,m = phi.shape
-
     ## the kernel function takes two 1xm x-vectors and returns a scalar
     ## first, compute the nxn matrix K(x_i, x_j)
     KM = numpy.zeros((n,n))
@@ -81,36 +52,15 @@ def dual(phi,y,C,K, debug=False):
             KM[i,j] = K(phi[i,:], phi[j,:])
     ## multiply in y_i*y_j
     Q = y.dot(y.T) * KM
-
     c = -numpy.ones((n,1))
-
     A = numpy.zeros((2*n, n))
     A[:n,:] = numpy.eye(n)
     A[n:,:] = -numpy.eye(n)
-
     g = numpy.zeros((2*n,1))
     g[:n] = C
-
     E = y.T
-
     d = numpy.array([[0]])
-
     ## convert to array
-    if debug:
-        print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
-        print "n,m=",n,m
-        print "Q:",Q.shape
-        print Q
-        print "c:",c.shape
-        print c
-        print "A:",A.shape
-        print A
-        print "g:",g.shape
-        print g
-        print "E:",E.shape
-        print E
-        print "d:",d.shape
-        print d
     ## have to convert everything to cxvopt matrices
     Q = cvxopt.matrix(Q,Q.shape,'d')
     c = cvxopt.matrix(c,c.shape,'d')
@@ -118,20 +68,6 @@ def dual(phi,y,C,K, debug=False):
     g = cvxopt.matrix(g,g.shape,'d')
     E = cvxopt.matrix(E,E.shape,'d')
     d = cvxopt.matrix(d,d.shape,'d')
-    if debug:
-        print "n,m=",n,m
-        print "Q:",Q.size
-        print Q
-        print "c:",c.size
-        print c
-        print "A:",A.size
-        print A
-        print "g:",g.size
-        print g
-        print "E:",E.size
-        print E
-        print "d:",d.size
-        print d
     ## set up cvxopt
     ## z (the vector being minimized for) in this case is [w, b, eps].T
     sol = cvxopt.solvers.qp(Q, c, A, g, E, d)
@@ -173,26 +109,13 @@ class Kernel:
             assert x.shape[1] == 1, "Vector %s has shape %s" %(name, str(x.shape))
         return self.K(a,b)
 
-## define a linear kernel function
-## a and be are each 1xm input vectors
+## define a linear kernel function, where inputs a and b are each 1xm input vectors
 linearKernel = Kernel(lambda a,b: a.T.dot(b))
 squaredKernel = Kernel(lambda a,b: a.T.dot(b)**2)
 beta = 0.1
 gaussianKernel = Kernel(lambda a,b: exp(-beta*((a-b).T.dot(a-b))))
 
 if __name__=='__main__':
-    # ## test out training
-    # name='ls'
-    # train = numpy.loadtxt('data/data_'+name+'_train.csv')
-    # x = train[:, 0:2].copy()
-    # M = 2
-    # phi = make_phi(x)
-    # y = train[:, 2:3].copy()
-    # C = .01
-
-    # p=primal(phi,y,C)
-    # print p
-
     ## a very simple training test
     numpy.set_printoptions(threshold=numpy.nan)
     M = 2
@@ -208,7 +131,7 @@ if __name__=='__main__':
 
     ## Carry out training, primal and/or dual
     C = 0.25
-    #C = 111110
+    ## primal
     p = primal(phiDummy,yDummy,C, debug=True)
     wP = numpy.array(p['x'][:m])
     bP = p['x'][m]
@@ -216,6 +139,7 @@ if __name__=='__main__':
     yP = make_phi(xValidate).dot(wP) + bP
     print yP>0
 
+    ## dual
     d = dual(phiDummy,yDummy,C, linearKernel, debug=True)
     alphaD = numpy.array(d['x'])
     print alphaD
