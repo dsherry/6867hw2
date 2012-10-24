@@ -13,11 +13,35 @@
 %\end{abstract}
 
 \section{Logistic Regression}
+Behavior at lambda=0: overfitted, weights too large
+
+Behavior as lambda increases, weights shrink in magnitude, but accuracy drops (?? try more values perhaps)
+
+Comment on non-separable data in general.
+
+Second-order basis function. Discuss performance improvements.
 
 \section{SVM implementation}
 
+Run svm on data, report results and discuss
+
 \section{SVM interpretation}
 
+1) Example problem
+a) why no change for c > 1
+b) manually find soln. is it unique?
+
+2) Try C = [10**(i-2) for i in range(5)]
+a) What happens to 1/magnitude(w) as C increases? Will this always happen?
+b) What happens to the number of support vectors as C increases?
+c) Why is maximizing geometric margin on training set not appropriate criterion for picking C. Alternative?
+
+3) How does xi relate to distance of support vector from decision boundary? (Bishop)
+
+4) Optimal slack loss function? Additional constraints?
+
 \section{Kernel SVM}
+
+Test second order polynomial kernel and Gaussian kernel. Show results, explain, esp. mistakes for several values of C and the Gaussian kernel variance 1/beta. Compare to results from logreg.
 
 \end{document}
