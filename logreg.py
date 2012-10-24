@@ -55,6 +55,7 @@ def hessian_490(w, phi, y, lamduh):
     return phi.T.dot(R.dot(phi)) + lamduh
 
 ## compute the predicted output given the weights and some input values in feature space
+## this is actually the probability the target is 1 given a position in feature space
 def yPredicted(w, b, phi):
     return sigmoid(phi.dot(w) + b)
 
