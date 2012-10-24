@@ -176,7 +176,9 @@ class Kernel:
 ## define a linear kernel function
 ## a and be are each 1xm input vectors
 linearKernel = Kernel(lambda a,b: a.T.dot(b))
-
+squaredKernel = Kernel(lambda a,b: a.T.dot(b)**2)
+beta = 0.1
+gaussianKernel = Kernel(lambda a,b: exp(-beta*((a-b).T.dot(a-b))))
 
 if __name__=='__main__':
     # ## test out training
