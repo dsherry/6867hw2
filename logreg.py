@@ -3,6 +3,7 @@
 
 from math import log, exp
 import numpy
+from numpy.random import random
 import scipy.optimize
 
 ## transform X (Nx1) into feature space (NxM)
@@ -54,13 +55,15 @@ def hessian_490(w, phi, y, lamduh):
     return phi.T.dot(R.dot(phi)) + lamduh
 
 ## compute the predicted output given the weights and some input values in feature space
-def yPredicted(w, phi):
-    return sigmoid(phi.dot(w))
+def yPredicted(w, b, phi):
+    return sigmoid(phi.dot(w) + b)
 
 ## the correct error function for logistic regression (7.47 in Bishop)
-def error(w, phi, y, lamduh):
+def error(wb, phi, y, lamduh):
     n,m = phi.shape
-    yp = yPredicted(w, phi)
+    w = wb[:m]
+    b = wb[m]
+    yp = yPredicted(w, b, phi)
     if not yp.shape == (n,1):
         yp = yp.reshape((n,1))
     return sum(numpy.log(1 + numpy.exp(-yp*y))) + lamduh * (w.T.dot(w))
@@ -85,36 +88,40 @@ def weightsWrapper(func):
         return func(w, args[0], args[1], args[2])
     return wrapper
 
-## run logreg using fmin_bfgs
-def fmin_bfgs_logreg(w, phi, y, lamduh):
-    #w = scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh))
-    w = scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh))
-    return w
+## perform logistic regression -- returns optimal weights and other info from the optimizer
+## note: transform input into feature space before inputting here
+## opt is the scipy optimizer to use, i.e. fmin, fmin_bfgs, etc
+def logreg(phi, y, lamduh, opt=scipy.optimize.fmin_bfgs, printInfo=False, returnAll=False):
+    ## transform into second-order feature space
+    n,m = phi.shape
+    ## initialize weights -- m for w and 1 for b
+    wb = numpy.zeros(m+1)
+    return opt(error, wb, args=(phi, y, lamduh), full_output=True, disp=int(printInfo), retall=int(returnAll))
 
 if __name__ == '__main__':
     ## first, test make_phi
-    x = 3*numpy.ones(2)
-    x[1] = 5
-    print "test x: ", x, x.shape
+    x = numpy.random.random((3,2))
     phi = make_phi(x)
-    print "test phi: ", phi, phi.shape
+    n,m = phi.shape
+    assert (n,m) == (3,6)
 
     ## now test actual data
     gtol = 1e-5
     train = numpy.loadtxt('data/data_ls_train.csv')
     X = train[:,0:2]
-    y = train[:,2:3]
+    Y = train[:,2:3]
     phi = make_phi(X)
     lamduh=0.1
-    #w = numpy.zeros(phi.shape[1]).reshape(phi.shape[1],1)
-    w = numpy.ones(phi.shape[1])
-
-    #irls(w, phi, y, lamduh)
-    #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, args=(phi, y, lamduh), gtol=gtol)
-    #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh) )
-    #w = w * 0
-    w = w * -1.9
-    print w
-    print scipy.optimize.fmin(error, w, args=(phi, y, lamduh), maxfun=100000)
-    #print scipy.optimize.fmin_bfgs(negLogLikelihood, w, fprime=negLogLikelihoodGradient, args=(phi, y, lamduh), gtol=0.1)
-    #print scipy.optimize.fmin_ncg(negLogLikelihood, w, negLogLikelihoodGradient, args=(phi, y, lamduh))
+    #print scipy.optimize.fmin(error, w, args=(phi, y, lamduh), maxfun=100000)
+    a = logreg(phi, Y, lamduh, opt=scipy.optimize.fmin_bfgs, printInfo=True)
+    ## return values for scipy optimizers fmin and fmin_bfgs, in order of occurence:
+    ## final guess
+    ## final value
+    ## gradient at final value (fmin_bfgs only)
+    ## inverse hessian at final value (fmin_bfgs only)
+    ## iterations (fmin only)
+    ## function evaluations
+    ## gradient evaluations
+    ## warnflag (1 if maxfunc reached, 2 if maxiter reached)
+    ## allvecs, soln at each step (if retall=1)
+    print a
