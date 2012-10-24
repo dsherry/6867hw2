@@ -32,9 +32,9 @@ def primal(phi,y,C):
     A[:n,m] = 1
     A[:n,m] = y.T
     A[:n,m+1:]  = numpy.eye(n)
-    A = -A
     ## second major change here
     A[n:,m+1:] = numpy.eye(n)
+    A = -A
     #print A[1,:]
     ## second major change here
     #g = -numpy.ones((n,1))
@@ -106,7 +106,7 @@ if __name__=='__main__':
 
     # Carry out training, primal and/or dual
     C = 0.25
-    #C = 0
+    C = 111110
     #p = primal(phiDummy,yDummy,C)
     p2 = primal(xDummy,yDummy,C)
     w = numpy.array(p2['x'][:m])
