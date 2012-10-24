@@ -24,13 +24,23 @@ def primal(phi,y,C):
     #print Q[0:7,0:7]
     c = numpy.vstack([numpy.zeros((m+1,1)), C*numpy.ones((n,1))])
     #print c[0:10]
-    A = numpy.zeros((n, m+1+n))
-    A[:,0:m] = y*phi
-    A[:,m] = 1
-    A[:,m+1:m+1+n]  = numpy.eye(n)
-    #print A[1,:]
+    #A = numpy.zeros((n, m+1+n))
+    ## second major change here
+    A = numpy.zeros((2*n, m+1+n))
+    A[:n,0:m] = y*phi
+    ## first major change below
+    A[:n,m] = 1
+    A[:n,m] = y.T
+    A[:n,m+1:]  = numpy.eye(n)
     A = -A
-    g = -numpy.ones((n,1))
+    ## second major change here
+    A[n:,m+1:] = numpy.eye(n)
+    #print A[1,:]
+    ## second major change here
+    #g = -numpy.ones((n,1))
+    g = numpy.zeros((2*n,1))
+    g[:n] = -1
+    # E and d are not used in the primal form
     E = d = 0
     ## convert to array
     print numpy.linalg.matrix_rank(Q), numpy.linalg.matrix_rank(c), numpy.linalg.matrix_rank(A), numpy.linalg.matrix_rank(g)
