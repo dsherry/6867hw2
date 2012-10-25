@@ -128,7 +128,6 @@ def makeGaussian(beta):
     return g
 gaussianKernel = Kernel(makeGaussian(beta))
 
-
 if __name__=='__main__':
     ## a very simple training test
     numpy.set_printoptions(threshold=numpy.nan)
