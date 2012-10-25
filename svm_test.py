@@ -90,6 +90,27 @@ def cSweep():
 
 if __name__=='__main__':
     #print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=True)()
-    gaussianKernel = Kernel(lambda a,b: exp(-20*((a-b).T.dot(a-b))))
-    print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=False)()
+    #gaussianKernel = Kernel(lambda a,b: exp(-0.3*((a-b).T.dot(a-b))))
+    #a=SVMTrain({'primal':False,'C':10, 'kernel':squaredKernel}, problemClass='svm', basisfunc='lin', printInfo=True, plot=True)
+    #e = a()
+    #print e
     #cSweep()
+
+    ## a simple check
+    dummyX = numpy.array([[1,1],
+                          [2,2]])
+    dummyY = numpy.array([[-1],
+                          [1]])
+
+    gaussianKernel = Kernel(lambda a,b: exp(-100*((a-b).T.dot(a-b))))
+    def g(a,b):
+        if a.shape != b.shape:
+            if len(a.shape) == 1:
+                a = a.reshape((1, a.shape[0]))
+            a = a.T
+        return exp(-100*((a-b).T.dot(a-b)))
+
+    gaussianKernel = Kernel(g)
+
+    b=SVMTrain({'primal':False,'C':2, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    print b._computeError(dummyX, dummyY)
