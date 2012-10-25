@@ -5,6 +5,7 @@ import svm
 import numpy
 from utils import *
 from svm import *
+from plotBoundary import *
 
 class SVMTrain(Train):
     def _train(self, X, Y):
@@ -20,11 +21,9 @@ class SVMTrain(Train):
             b = self.result['x'][m]
         else:
             kernel = self.params['kernel']
-            self.result = svm.dual(phi,Y,C)
-
-            d = dual(phiDummy,yDummy, C, kernel)
-            self.alphaD = numpy.array(d['x'])
-            w,b,self.S,self.M = svm.dualWeights(phiDummy, yDummy, kernel, self.alphaD, C)
+            self.result = svm.dual(phi,Y,C,kernel)
+            self.alphaD = numpy.array(self.result['x'])
+            w,b,self.dualS,self.dualM = svm.dualWeights(phi, Y, kernel, self.alphaD, C)
         return w,b
 
 def dummy():
@@ -51,11 +50,46 @@ def dummy():
 
     plotDecisionBoundary(xDummy, yDummy, dummyPredictor, [-1, 0, 1], title = 'SVM Validate')
 
-if __name__=='__main__':
-    # SVMTrain('ls',C=0)
-    # SVMTrain('ls',C=0.01)
-    # SVMTrain('ls',C=0.1)
-    # SVMTrain('ls',C=1)
-    # SVMTrain('ls',C=10)
+    
 
-    print SVMTrain({'primal':True,'C':0.01}, printInfo=True)()
+def cSweep():
+    problemClass = "svm"
+    varName = "C"
+
+    ## try an exponential sweep up to around 250
+    cVals = numpy.array([0] + [10**i for i in numpy.arange(-4,2.5,0.2)])
+
+    # ## first try the primal with linear basis functions, linear kernel
+    # resultsLin = numpy.array([SVMTrain({'primal':True, 'C':C}, basisfunc='lin', plot=False, printInfo=False)() for c in cVals])
+    # trainingErrLin = resultsLin[:,0]
+    # validationErrLin = resultsLin[:,1]
+    # plotTVError(lambdaVals, trainingErrLin, validationErrorLin, problemClass=problemClass, varName=varName, linQuad='linear', extra='')
+
+    # # now try the primal with quadratic basis function, linear kernel
+    # resultsQuad = numpy.array([SVMTrain({'primal':True, 'C':C}, basisfunc='quad', plot=False, printInfo=False)() for c in cVals])
+    # trainingErrQuad = resultsQuad[:,0]
+    # validationErrQuad = resultsQuad[:,1]
+    # plotTVError(lambdaVals, trainingErrQuad, validationErrorQuad, problemClass=problemClass, varName=varName, linQuad='quadratic', extra='')
+
+    def plotTVErrorWrapper(cVals, primal, kernelName, kernel, linQuad, problemClass, varName):
+        print "primal=%s, linQuad=%s, kernelName=%s" %(primal, linQuad, kernelName)
+        results = numpy.array([SVMTrain({'primal':(True if primal=='primal' else False), varName:C, 'kernel':kernel}, basisfunc=linQuad, plot=False, printInfo=True)() for C in cVals])
+        trainingErr = results[:,0]
+        validationErr = results[:,1]
+        plotTVError(cVals, trainingErr, validationErr, problemClass=problemClass, varName=varName, linQuad=('quadratic' if linQuad=='quad' else 'linear'), extra=' and a %s kernel, %s form' %(kernelName, primal))
+        return numpy.array([results, trainingErr, validationErr])
+
+    kernels = [('linear',linearKernel), ('quadratic',squaredKernel), ('Gaussian',gaussianKernel)]
+    lq = ['lin','quad']
+    p = ['primal','dual']
+    ## plot and return all 3*2*2 = 12 possibilities
+    result = numpy.array([plotTVErrorWrapper(cVals, primal, kernelName, kernel, linQuad, problemClass, varName) for kernelName, kernel in kernels for linQuad in lq for primal in p])
+
+    return cVals, result
+
+
+if __name__=='__main__':
+    #print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=True)()
+    gaussianKernel = Kernel(lambda a,b: exp(-20*((a-b).T.dot(a-b))))
+    print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=False)()
+    #cSweep()

@@ -63,34 +63,23 @@ def train(lamduh=0.1, basisfunc='lin', plot=False, optimizePrint=False, name='ls
     return numpy.array([tErr, vErr])
 
 def lambdaSweep():
+    problemClass = "lr"
+    varName = "$\lambda$"
+
     ## try an exponential sweep up to around 250
     lambdaVals = numpy.array([0] + [10**i for i in numpy.arange(-4,2.5,0.2)])
+
     ## first try with linear basis functions
-    resultsLin = numpy.array([LRTrain({'lamduh':lamduh}, basisfunc='lin', plot=False, printInfo=False)() for lamduh in lambdaVals])
+    resultsLin = numpy.array([LRTrain({'lamduh':lamduh}, problemClass=problemClass,basisfunc='lin', plot=False, printInfo=False)() for lamduh in lambdaVals])
     trainingErrLin = resultsLin[:,0]
     validationErrLin = resultsLin[:,1]
-    fig1 = pl.figure()
-    gca1 = fig1.gca()
-    gca1.plot(lambdaVals, trainingErrLin, 'b', lambdaVals, validationErrLin, 'g')
-    fig1.gca().set_xscale('log', basex=10)
-    pl.title('LR Error v.s. $\lambda$ with linear basis functions')
-    pl.xlabel('$\lambda$, $log_{10}$ scale')
-    pl.ylabel('Error')
-    pl.legend(('Training error', 'Validation error'), loc=2)
+    plotTVError(lambdaVals, trainingErrLin, validationErrLin, problemClass=problemClass, varName=varName, linQuad='linear', extra='')
 
     # now try with quadratic basis function
     resultsQuad = numpy.array([LRTrain({'lamduh':lamduh}, basisfunc='quad', plot=False, printInfo=False)() for lamduh in lambdaVals])
     trainingErrQuad = resultsQuad[:,0]
     validationErrQuad = resultsQuad[:,1]
-    fig2 = pl.figure()
-    pl.plot(lambdaVals, trainingErrQuad, 'b', lambdaVals, validationErrQuad, 'g')
-    fig2.gca().set_xscale('log', basex=10)
-    pl.title('LR Error v.s. $\lambda$ with quadratic basis functions')
-    pl.xlabel('$\lambda$, $log_{10}$ scale')
-    pl.ylabel('Error')
-    pl.legend(('Training error', 'Validation error'), loc=2)
-
-
+    plotTVError(lambdaVals, trainingErrQuad, validationErrQuad, problemClass=problemClass, varName=varName, linQuad='quadratic', extra='')
 
     return lambdaVals, trainingErrLin, validationErrLin, trainingErrQuad, validationErrQuad
 

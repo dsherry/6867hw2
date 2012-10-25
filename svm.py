@@ -5,6 +5,7 @@ from math import log, exp
 import numpy
 import scipy.optimize
 import cvxopt, cvxopt.solvers
+from plotBoundary import *
 
 from utils import *
 
@@ -80,7 +81,7 @@ def dualWeights(x, y, K, alpha, C):
     assert y.shape == (n,1)
     assert alpha.shape == (n,1)
     ## calculate weights
-    w = sum([alpha[i] * y[i] * x[i,:] for i in range(n)])
+    w = numpy.sum([alpha[i] * y[i] * x[i,:] for i in range(n)], axis=0)
     ## calculate offset b
     ## get the indices of the support vectors
     sIndices = [i for i in range(n) if alpha[i] > 0]

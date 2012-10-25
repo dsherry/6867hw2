@@ -9,6 +9,8 @@ from numpy.random import random
 import scipy.optimize
 import logreg
 
+from plotBoundary import plotDecisionBoundary
+
 ## transform X (NxM) into a simple linear feature space (NxM+1)
 def makePhiLinear(X):
     ## [X**0, X**1, X**2, ... X**M]
@@ -144,4 +146,19 @@ class Train:
     ## this is the one function which must be implemented by subclasses
     def _train(self, X, Y):
         raise NotImplemented('This should be set by a subclass')
+
+
+## plots training and validation errors vs lambda (or C)
+## lambdaC, tError and vError have same dims.
+## lambdaC can be either lambda (LR) or C (SVM)
+## extra is used by svm_test to add in info about the kernel
+def plotTVError(lambdaC, tError, vError, problemClass='lr', varName='$\lambda$', linQuad='linear', extra=''):
+    import pylab as pl
+    fig = pl.figure()
+    pl.plot(lambdaC, tError, 'b', lambdaC, vError, 'g')
+    fig.gca().set_xscale('log', basex=10)
+    pl.title('%s Error v.s. %s with %s basis functions%s' %(problemClass.upper(), varName, linQuad, extra))
+    pl.xlabel('%s, $log_{10}$ scale' %(varName))
+    pl.ylabel('Error')
+    pl.legend(('Training error', 'Validation error'), loc=2)
 
