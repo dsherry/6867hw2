@@ -121,7 +121,7 @@ if __name__=='__main__':
     M = 2
     xDummy = numpy.array([[1,0],[-1,0]])
     assert xDummy.shape == (2,2)
-    phiDummy = make_phi(xDummy)
+    phiDummy = makePhi(xDummy,M)
     assert phiDummy.shape == (2,6)
     print phiDummy
     n,m = phiDummy.shape
@@ -136,7 +136,7 @@ if __name__=='__main__':
     wP = numpy.array(p['x'][:m])
     bP = p['x'][m]
     xValidate = numpy.array([[100,0],[-100,231232],[0,123123123]])
-    yP = make_phi(xValidate).dot(wP) + bP
+    yP = makePhi(xValidate,M).dot(wP) + bP
     print yP>0
 
     ## dual
@@ -144,3 +144,4 @@ if __name__=='__main__':
     alphaD = numpy.array(d['x'])
     print alphaD
     w,b,S,M = dualWeights(phiDummy, yDummy, linearKernel, alphaD, C)
+

@@ -4,29 +4,47 @@ from plotBoundary import *
 import scipy
 
 import logreg
+from logreg import yPredicted
 from utils import *
 
-def train(name='ls', lamduh=0.1):
+class LRTrain(Train):
+    def _train(self, X, Y):
+        phi = makePhi(X,self.M)
+        n,m = phi.shape
+        self.result = logreg.logreg(phi, Y, self.params['lamduh'], opt=scipy.optimize.fmin_bfgs, printInfo=self.printInfo)
+        w = self.result[0][:m]
+        b = self.result[0][m]
+        return w,b
+
+def train(lamduh=0.1, basisfunc='lin', plot=False, optimizePrint=False, name='ls'):
+    # handle basis function
+    if basisfunc=='lin': M=1
+    elif basisfunc=='quad': M=2
+    else: raise Exception('Value "%s" for basisfunc must be either "lin" or "quad"'%(basisfunc))
     # parameters
-    name = 'ls'
     print '======Training======'
+    print 'lambda = ' + str(lamduh)
     # load data from csv files
     train = loadtxt('data/data_'+name+'_train.csv')
     X = train[:,0:2]
     Y = train[:,2:3]
 
     # Carry out training.
-    phi = make_phi(X)
+    phi = makePhi(X,M)
     n,m = phi.shape
-    result = logreg.logreg(phi, Y, lamduh, opt=scipy.optimize.fmin_bfgs, printInfo=True)
+    result = logreg.logreg(phi, Y, lamduh, opt=scipy.optimize.fmin_bfgs, printInfo=optimizePrint)
     w = result[0][:m]
     b = result[0][m]
 
     # Define the predictLR(x) function, which uses trained parameters
-    predictLR = makePredictor(w,b,mode='logreg')
+    predictLR = makePredictor(w,b,M,mode='logreg')
+
+    # get training error
+    tErr = getError(X, Y, w, b, mode='logreg')
 
     # plot training results
-    plotDecisionBoundary(X, Y, predictLR, [0.5], title = 'LR Train')
+    if plot:
+        plotDecisionBoundary(X, Y, predictLR, [0.5], title = 'LR Train with ${\lambda}=%s$' %(lamduh))
 
     print '======Validation======'
     # load data from csv files
@@ -35,15 +53,52 @@ def train(name='ls', lamduh=0.1):
     Y = validate[:,2:3]
 
     # plot validation results
-    plotDecisionBoundary(X, Y, predictLR, [0.5], title = 'LR Validate')
+    if plot:
+        plotDecisionBoundary(X, Y, predictLR, [0.5], title = 'LR Validate with ${\lambda}=%s$' %(lamduh))
 
-    # print validation error
-    err = validationError(X, Y, w, b, mode='logreg')
-    print err
+    # get validation error
+    vErr = getError(X, Y, w, b, mode='logreg')
+
+    ## return training and validation error
+    return numpy.array([tErr, vErr])
+
+def lambdaSweep():
+    ## try an exponential sweep up to around 250
+    lambdaVals = numpy.array([0] + [10**i for i in numpy.arange(-4,2.5,0.2)])
+    ## first try with linear basis functions
+    resultsLin = numpy.array([LRTrain({'lamduh':lamduh}, basisfunc='lin', plot=False, printInfo=False)() for lamduh in lambdaVals])
+    trainingErrLin = resultsLin[:,0]
+    validationErrLin = resultsLin[:,1]
+    fig1 = pl.figure()
+    gca1 = fig1.gca()
+    gca1.plot(lambdaVals, trainingErrLin, 'b', lambdaVals, validationErrLin, 'g')
+    fig1.gca().set_xscale('log', basex=10)
+    pl.title('LR Error v.s. $\lambda$ with linear basis functions')
+    pl.xlabel('$\lambda$, $log_{10}$ scale')
+    pl.ylabel('Error')
+    pl.legend(('Training error', 'Validation error'), loc=2)
+
+    # now try with quadratic basis function
+    resultsQuad = numpy.array([LRTrain({'lamduh':lamduh}, basisfunc='quad', plot=False, printInfo=False)() for lamduh in lambdaVals])
+    trainingErrQuad = resultsQuad[:,0]
+    validationErrQuad = resultsQuad[:,1]
+    fig2 = pl.figure()
+    pl.plot(lambdaVals, trainingErrQuad, 'b', lambdaVals, validationErrQuad, 'g')
+    fig2.gca().set_xscale('log', basex=10)
+    pl.title('LR Error v.s. $\lambda$ with quadratic basis functions')
+    pl.xlabel('$\lambda$, $log_{10}$ scale')
+    pl.ylabel('Error')
+    pl.legend(('Training error', 'Validation error'), loc=2)
+
+
+
+    return lambdaVals, trainingErrLin, validationErrLin, trainingErrQuad, validationErrQuad
 
 if __name__ == '__main__':
-    train(lamduh=0)
-    train(lamduh=0.01)
-    train(lamduh=0.1)
-    train(lamduh=1)
-    train(lamduh=10)
+    name='ls'
+    ## a simple training test
+    print LRTrain({'lamduh':0.01}, printInfo=True)()
+
+    ## the good stuff
+    lambdaSweep()
+    pl.show()

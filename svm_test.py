@@ -6,49 +6,34 @@ import numpy
 from utils import *
 from svm import *
 
-def train(name,C=1):
-    # parameters
-    print '======Training======'
-    # load data from csv files
-    train = loadtxt('data/data_'+name+'_train.csv')
-    # use deep copy here to make cvxopt happy
-    X = train[:, 0:2].copy()
-    phi = make_phi(X)
-    n,m = phi.shape
-    Y = train[:, 2:3].copy()
+class SVMTrain(Train):
+    def _train(self, X, Y):
+        ## first, cvxopt output suppression
+        if not self.printInfo: cvxopt.solvers.options['show_progress'] = False
+        phi = makePhi(X,self.M)
+        n,m = phi.shape
+        primal = self.params['primal']
+        C = self.params['C']
+        if primal:
+            self.result = svm.primal(phi,Y,C)
+            w = numpy.array(self.result['x'][:m])
+            b = self.result['x'][m]
+        else:
+            kernel = self.params['kernel']
+            self.result = svm.dual(phi,Y,C)
 
-    # Carry out training, primal and/or dual
-    p = svm.primal(phi,Y,C)
-    w = numpy.array(p['x'][:m])
-    b = p['x'][m]
-
-    # make predictor
-    predictSVM = makePredictor(w,b,'svm')
-
-    # plot training results
-    plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Train')
-
-    print '======Validation======'
-    # load data from csv files
-    validate = loadtxt('data/data_'+name+'_validate.csv')
-    X = validate[:, 0:2]
-    Y = validate[:, 2:3]
-
-    # make predictor
-    predictSVM = makePredictor(w,b,'svm')
-
-    # plot validation results
-    plotDecisionBoundary(X, Y, predictSVM, [-1, 0, 1], title = 'SVM Validate')
-
-    # print validation error
-    err = validationError(X, Y, w, b, mode='svm')
-    print err
+            d = dual(phiDummy,yDummy, C, kernel)
+            self.alphaD = numpy.array(d['x'])
+            w,b,self.S,self.M = svm.dualWeights(phiDummy, yDummy, kernel, self.alphaD, C)
+        return w,b
 
 def dummy():
     ## a very simple test
     xDummy = numpy.array([[0,0],[1,1],[1,2]])
     assert xDummy.shape == (3,2)
-    phiDummy = make_phi(xDummy)
+    ## quadratic basis function
+    M=2
+    phiDummy = makePhi(xDummy,M)
     assert phiDummy.shape == (3,6)
     n,m = phiDummy.shape
     yDummy = numpy.array([[-1], [1], [1]])
@@ -62,13 +47,15 @@ def dummy():
     assert w.shape == (6,1)
     b = p['x'][m]
     assert isinstance(b, (int,float))
-    dummyPredictor = makePredictor(w,b,'svm')
+    dummyPredictor = makePredictor(w,b,M,'svm')
 
     plotDecisionBoundary(xDummy, yDummy, dummyPredictor, [-1, 0, 1], title = 'SVM Validate')
 
 if __name__=='__main__':
-    train('ls',C=0)
-    train('ls',C=0.01)
-    train('ls',C=0.1)
-    train('ls',C=1)
-    train('ls',C=10)
+    # SVMTrain('ls',C=0)
+    # SVMTrain('ls',C=0.01)
+    # SVMTrain('ls',C=0.1)
+    # SVMTrain('ls',C=1)
+    # SVMTrain('ls',C=10)
+
+    print SVMTrain({'primal':True,'C':0.01}, printInfo=True)()
