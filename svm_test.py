@@ -24,6 +24,7 @@ class SVMTrain(Train):
             self.result = svm.dual(phi,Y,C,kernel)
             self.alphaD = numpy.array(self.result['x'])
             w,b,self.dualS,self.dualM = svm.dualWeights(phi, Y, kernel, self.alphaD, C)
+        self.slack = numpy.array(self.result['z'])[:-n]
         return w,b
 
 def dummy():
@@ -102,7 +103,17 @@ if __name__=='__main__':
     dummyY = numpy.array([[-1],
                           [1]])
 
-    #b=SVMTrain({'primal':False,'C':1000, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
-    #print b._computeError(dummyX, dummyY)
-    b=SVMTrain({'primal':False,'C':1000, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
-    print b()
+    dummyX = numpy.array([[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],
+                          [2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],
+                          [1.4, 1.4],
+                          [1.6,1.6]
+                          ])
+    dummyY = numpy.array([[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],
+                          [1],[1],[1],[1],[1],[1],[1],[-1],[1],
+                          [-1],
+                          [1]])
+
+    b=SVMTrain({'primal':False,'C':1, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    print b._computeError(dummyX, dummyY)
+    #b=SVMTrain({'primal':False,'C':1000, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    #print b()
