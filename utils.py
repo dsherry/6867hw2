@@ -14,12 +14,11 @@ from plotBoundary import plotDecisionBoundary
 ## transform X (NxM) into a simple linear feature space (NxM+1)
 def makePhiLinear(X):
     ## [X**0, X**1, X**2, ... X**M]
-    if len(X.shape) > 1:
-        n,m = X.shape
-    else:
-        n = X.shape[0]
-        m = 1
-    return numpy.hstack([numpy.ones((n,1)),X])
+    if len(X.shape) == 1:
+        X = X.reshape((1,X.shape[0]))
+    n,m = X.shape
+    return X
+    #return numpy.hstack([numpy.ones((n,1)),X])
 
 ##Enter the feature space via a second order set of basis functions
 def makePhiQuadratic(X):
@@ -52,7 +51,12 @@ def makePredictor(w,b,M,mode='lr'):
     threshold = 0.5 if mode=='lr' else 0.0
     def predict(x):
         ## transform into feature space
-        phi = makePhi(x,M)
+        try:
+            phi = makePhi(x,M)
+        except ValueError:
+            print x
+            print x.shape,M
+            assert False, "ValueError in utils.makePredictor"
         n,m = phi.shape
         val = phi.dot(w) + b
         if mode=='lr': val = sigmoid(val)
@@ -94,6 +98,16 @@ class Train:
 
     def __call__(self):
         return self._computeTVError()
+
+    def _computeError(self, X, Y, name=' (unnamed)'):
+        ## make a predictor and get training error
+        predictor, tErr = self._trainPredictError(X, Y)
+
+        # plot training results
+        if self.plot:
+            plotDecisionBoundary(X, Y, predictor, [-1, 0, 1], title = self.problemClass + name)
+        
+        return tErr
 
     ## return the training and validation error
     def _computeTVError(self):

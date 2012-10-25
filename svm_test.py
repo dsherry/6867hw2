@@ -90,6 +90,19 @@ def cSweep():
 
 if __name__=='__main__':
     #print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=True)()
-    gaussianKernel = Kernel(lambda a,b: exp(-20*((a-b).T.dot(a-b))))
-    print SVMTrain({'primal':False,'C':0.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='quad', printInfo=True, plot=False)()
+    #gaussianKernel = Kernel(lambda a,b: exp(-0.3*((a-b).T.dot(a-b))))
+    #a=SVMTrain({'primal':False,'C':10, 'kernel':squaredKernel}, problemClass='svm', basisfunc='lin', printInfo=True, plot=True)
+    #e = a()
+    #print e
     #cSweep()
+
+    ## a simple check
+    dummyX = numpy.array([[1,1],
+                          [2,2]])
+    dummyY = numpy.array([[-1],
+                          [1]])
+
+    #b=SVMTrain({'primal':False,'C':1000, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    #print b._computeError(dummyX, dummyY)
+    b=SVMTrain({'primal':False,'C':1000, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    print b()
