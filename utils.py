@@ -80,10 +80,11 @@ def getError(X, Y, w, b, M, mode='lr'):
     return wrong / n
 
 class Train:
-    def __init__(self, params, problemClass='svm',basisfunc='lin', datapath='data/data_ls_%s.csv', plot=False, printInfo=False):
+    def __init__(self, params, problemClass='svm',basisfunc='lin', datapath='data/data_%s_%s.csv', dataSetName='ls',plot=False, printInfo=False):
         assert isinstance(params, dict)
         assert 'lamduh' in params or 'C' in params
         self.params = params
+        self.dataSetName = dataSetName
         self.datapath = datapath
         self.plot = plot
         self.printInfo = printInfo
@@ -106,13 +107,13 @@ class Train:
         # plot training results
         if self.plot:
             plotDecisionBoundary(X, Y, predictor, [-1, 0, 1], title = self.problemClass + name)
-        
+
         return tErr
 
     ## return the training and validation error
     def _computeTVError(self):
         ## load data
-        train = numpy.loadtxt(self.datapath %('train'))
+        train = numpy.loadtxt(self.datapath %(self.dataSetName,'train'))
         self.tX = train[:, 0:2].copy()
         #self.tPhi = makePhi(self.tX,self.M)
         #self.n,self.m = self.tPhi.shape
@@ -126,9 +127,9 @@ class Train:
             plotDecisionBoundary(self.tX, self.tY, self.predictor, [-1, 0, 1], title = self.problemClass + ' Train')
 
         ## load validation data
-        validate = numpy.loadtxt(self.datapath %('validate'))
+        validate = numpy.loadtxt(self.datapath %(self.dataSetName,'validate'))
         self.vX = validate[:, 0:2].copy()
-        self.vY = validate[:, 2:3].copy()
+        self.vY = validate[:, 2:3].copy() ## actually a width of 1 for this data
 
         # plot validation results
         if self.plot:
