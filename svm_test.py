@@ -116,4 +116,8 @@ if __name__=='__main__':
     b=SVMTrain({'primal':False,'C':1, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
     print b._computeError(dummyX, dummyY)
     #b=SVMTrain({'primal':False,'C':1000, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
-    #print b()
+    print b()
+
+    ## try some more nonlinear data
+    s=SVMTrain({'primal':False,'C':1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', dataSetName='nls',printInfo=True, plot=True)
+    print s()
