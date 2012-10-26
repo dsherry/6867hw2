@@ -9,6 +9,9 @@ from plotBoundary import *
 
 class SVMTrain(Train):
     def _train(self, X, Y):
+        ## save for use in _getPredictor below
+        self.tX = X
+        self.tY = Y
         ## first, cvxopt output suppression
         if not self.printInfo: cvxopt.solvers.options['show_progress'] = False
         phi = makePhi(X,self.M)
@@ -20,12 +23,18 @@ class SVMTrain(Train):
             w = numpy.array(self.result['x'][:m])
             b = self.result['x'][m]
         else:
-            kernel = self.params['kernel']
-            self.result = svm.dual(phi,Y,C,kernel)
+            self.kernel = self.params['kernel']
+            self.result = svm.dual(phi,Y,C,self.kernel)
             self.alphaD = numpy.array(self.result['x'])
-            w,b,self.dualS,self.dualM = svm.dualWeights(phi, Y, kernel, self.alphaD, C)
+            w,b,self.dualS,self.dualM = svm.dualWeights(phi, Y, self.kernel, self.alphaD, C)
         self.slack = numpy.array(self.result['z'])[:-n]
         return w,b
+
+    def _getPredictor(self):
+        self.kernel = self.params['kernel']
+        if not self.params['primal']:
+            return makeKernelPredictor(self.w, self.b, self.M, self.alphaD, self.tX, self.tY, self.kernel, self.params['C'])
+        else: return super(Train, self)._getPredictor()
 
 def dummy():
     ## a very simple test
@@ -99,25 +108,28 @@ if __name__=='__main__':
 
     ## a simple check
     dummyX = numpy.array([[1,1],
-                          [2,2]])
+                          [2,2],
+                          [3,3]])
     dummyY = numpy.array([[-1],
-                          [1]])
+                          [1],
+                          [-1]])
 
-    dummyX = numpy.array([[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],
-                          [2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],
-                          [1.4, 1.4],
-                          [1.6,1.6]
-                          ])
-    dummyY = numpy.array([[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],
-                          [1],[1],[1],[1],[1],[1],[1],[-1],[1],
-                          [-1],
-                          [1]])
+    #dummyX = numpy.array([[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],[1,1],[0.9,1.02],[1.02,0.93],
+    #                      [2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],[2.02,2.2],[2.3,2.4],[2,2],
+    #                      [1.4, 1.4],
+    #                      [1.6,1.6]
+    #                      ])
+    #dummyY = numpy.array([[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],[-1],
+    #                      [1],[1],[1],[1],[1],[1],[1],[-1],[1],
+    #                      [-1],
+    #                      [1]])
 
-    b=SVMTrain({'primal':False,'C':1, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
+    b=SVMTrain({'primal':False,'C':1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', printInfo=True, plot=True)
     print b._computeError(dummyX, dummyY)
-    #b=SVMTrain({'primal':False,'C':1000, 'kernel':linearKernel}, problemClass='svm', basisfunc='lin', printInfo=False, plot=True)
-    print b()
+    b=SVMTrain({'primal':False,'C':1000, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', printInfo=True, plot=True)
+    #print b()
 
     ## try some more nonlinear data
-    s=SVMTrain({'primal':False,'C':1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', dataSetName='nls',printInfo=True, plot=True)
-    print s()
+    ## worked well with beta=10
+    #s=SVMTrain({'primal':False,'C':.1, 'kernel':gaussianKernel}, problemClass='svm', basisfunc='lin', dataSetName='nls',printInfo=True, plot=True)
+    #print s()

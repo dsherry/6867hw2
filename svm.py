@@ -50,8 +50,10 @@ def dual(phi,y,C,K, debug=False):
     KM = numpy.zeros((n,n))
     for i in range(n):
         for j in range(n):
-            KM[i,j] = K(phi[i,:], phi[j,:])
+            KM[i,j] = float(K(phi[i,:], phi[j,:]))
     ## multiply in y_i*y_j
+    yy = y.dot(y.T)
+    assert yy.shape == (n,n)
     Q = y.dot(y.T) * KM * .5
     c = -numpy.ones((n,1))
     A = numpy.zeros((2*n, n))
@@ -111,22 +113,23 @@ class Kernel:
         return self.K(a,b)
 
 ## define a linear kernel function, where inputs a and b are each 1xm input vectors
-linearKernel = Kernel(lambda a,b: sum(a.T.dot(b)))
+lk = lambda a,b: sum(a.T.dot(b))
+linearKernel = Kernel(lk)
 squaredKernel = Kernel(lambda a,b: (1 + a.T.dot(b))**2)
 #squaredKernel = Kernel(lambda a,b: (1 + (a.T.dot(b))**2))
 beta = 0.5 ## variance of 1
-beta = 10
+beta = 100
 #gaussianKernel = Kernel(lambda a,b: exp(-beta*((a-b).T.dot(a-b))))
 
 def makeGaussian(beta):
     def g(a,b):
-        assert a.shape == b.shape
+        assert a.shape == b.shape, "a.shape: " + str(a.shape) + ", b.shape: " + str(b.shape)
         if a.shape[0] == 1:
             a = a.reshape((a.shape[1],1))
             b = b.reshape((b.shape[1],1))
         return exp(-beta*((a-b).T.dot(a-b)))
     return g
-gaussianKernel = Kernel(makeGaussian(beta))
+gaussianKernel = Kernel(makeGaussian(10))
 
 if __name__=='__main__':
     ## a very simple training test

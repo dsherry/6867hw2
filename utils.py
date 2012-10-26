@@ -43,10 +43,33 @@ def sigmoid(X):
     denom = 1.0 + numpy.exp(-1.0 * X)
     return 1.0 / denom
 
+## a predictor for dual form svms with kernels
+## from www.support-vector.net/icml-tutorial.pdf
+## note: HIGHLY inefficient... redo with numpy
+def makeKernelPredictor(w, b, orderM, alpha, xOrig, yOrig, K, C):
+    n = len(yOrig)
+    def kernelPredictor(xNew):
+        ## transform xes into feature space
+        phiOrig = makePhi(xOrig, orderM)
+        phiNew = makePhi(xNew, orderM)
+        #assert phiNew.shape == phiOrig.shape, "phiNew.shape: %s, phiOrig.shape: %s, xOrig.shape: %s %s %s" %(phiNew.shape, phiOrig.shape, xOrig.shape, phiOrig[0,:], xOrig[0,:])
+        ## compute w*phi(phiNew) = sum(alphi_i * yOrig_i * K(phiNew,phiOrig_i)
+        wphi = sum([alpha[i] * yOrig[i] * K(phiNew.T, phiOrig[i,:].T) for i in xrange(n)])
+
+        ## count the number of data points for which 0 < alpha < C
+        mIndices = [i for i in xrange(n) if 0 < alpha[i] < C]
+        M = len(mIndices)
+        ## average the calculated b values
+        b = sum([yOrig[k] - sum([alpha[i] * yOrig[i] * K(phiOrig[k,:].T,phiOrig[i,:].T) for i in xrange(n)]) for k in mIndices])/float(M)
+        #b = sum([yOrig[j] - sum([alpha[i] * yOrig[i] * K(phiOrig[i,:],phiOrig[j,:]) for i in sIndices]) for j in mIndices])/float(M)
+        return 1 if wphi + b > 0 else -1
+
+    return kernelPredictor
+
 ## Define the predict___(x) function, which uses trained parameters
 ## This works generally for svms and logreg
 ## makePhi is the basis function used to transform into feature space
-def makePredictor(w,b,M,mode='lr'):
+def makePredictor(w,b,M,mode='lr',kernel=None):
     assert mode in ['lr','svm'], "Invalid mode \"%s\"" %(mode)
     threshold = 0.5 if mode=='lr' else 0.0
     def predict(x):
@@ -69,13 +92,14 @@ def makePredictor(w,b,M,mode='lr'):
 
 
 ## given an X/Y pair and a w/b pair (trained weights), compute the predicted error rate
-def getError(X, Y, w, b, M, mode='lr'):
+def getError(X, Y, w, b, M, mode='lr', predictor=None):
     n = X.shape[0]
     assert X.shape[0] == Y.shape[0]
     assert Y.shape[1] == 1
     assert mode in ['lr','svm'], "Invalid mode \"%s\"" %(mode)
-    predictor = makePredictor(w,b,M,mode=mode)
-    wrong = float(sum(predictor(X) == Y))
+    if not predictor:
+        predictor = makePredictor(w,b,M,mode=mode)
+    wrong = float(sum([predictor(X[i,:]) == Y[i] for i in xrange(n)]))
     if wrong > n/2: wrong = n - wrong
     return wrong / n
 
@@ -136,26 +160,28 @@ class Train:
             plotDecisionBoundary(self.vX, self.vY, self.predictor, [-1, 0, 1], title = self.problemClass + ' Validate')
 
         # print validation error
-        self.vErr = self._getError(self.vX, self.vY)
+        self.vErr = self._getError(self.vX, self.vY, self.predictor)
         return self.tErr, self.vErr
 
     ## make a predictor appropriate for the problem class, using trained weights
     def _getPredictor(self):
-            return makePredictor(self.w,self.b,self.M,mode=self.problemClass.lower())
+        # if self.problemClass.lower() == 'svm':
+        #     return makeKernelPredictor(self.w, self.b, self.alphaD, self.tX, self.tY, self.K)
+        return makePredictor(self.w,self.b,self.M,mode=self.problemClass.lower())
 
     ## compute the error, given X and Y
-    def _getError(self, X, Y):
-        return getError(X, Y, self.w, self.b, self.M, mode=self.problemClass.lower())
+    def _getError(self, X, Y, predictor):
+        return getError(X, Y, self.w, self.b, self.M, mode=self.problemClass.lower(), predictor=self.predictor)
 
     ## train and return a predictor and the training error
     def _trainPredictError(self, X, Y):
         # given training params, get w and b
         self.w, self.b = self._train(X, Y)
         # make predictor
-        predictor = self._getPredictor()
+        self.predictor = self._getPredictor()
         # get training error
-        tErr = self._getError(X, Y)
-        return predictor, tErr
+        tErr = self._getError(X, Y, self.predictor)
+        return self.predictor, tErr
 
     ## given problem-specific params (i.e., C or lambda), return weights w and b
     ## this is the one function which must be implemented by subclasses
