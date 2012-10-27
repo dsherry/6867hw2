@@ -118,18 +118,19 @@ linearKernel = Kernel(lk)
 squaredKernel = Kernel(lambda a,b: (1 + a.T.dot(b))**2)
 #squaredKernel = Kernel(lambda a,b: (1 + (a.T.dot(b))**2))
 beta = 0.5 ## variance of 1
-beta = 100
+beta = 10
+print "beta = " + str(beta)
 #gaussianKernel = Kernel(lambda a,b: exp(-beta*((a-b).T.dot(a-b))))
 
 def makeGaussian(beta):
     def g(a,b):
-        assert a.shape == b.shape, "a.shape: " + str(a.shape) + ", b.shape: " + str(b.shape)
-        if a.shape[0] == 1:
-            a = a.reshape((a.shape[1],1))
-            b = b.reshape((b.shape[1],1))
+        #assert a.shape == b.shape, "a.shape: " + str(a.shape) + ", b.shape: " + str(b.shape)
+        #if a.shape[0] == 1:
+        #    a = a.reshape((a.shape[1],1))
+        #    b = b.reshape((b.shape[1],1))
         return exp(-beta*((a-b).T.dot(a-b)))
     return g
-gaussianKernel = Kernel(makeGaussian(10))
+gaussianKernel = Kernel(makeGaussian(beta))
 
 if __name__=='__main__':
     ## a very simple training test

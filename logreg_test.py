@@ -8,6 +8,9 @@ from logreg import yPredicted
 from utils import *
 
 class LRTrain(Train):
+    def _generateTitle(self):
+        return ", error=%s with $\lambda=%s$"
+
     def _train(self, X, Y):
         phi = makePhi(X,self.M)
         n,m = phi.shape
@@ -62,7 +65,7 @@ def train(lamduh=0.1, basisfunc='lin', plot=False, optimizePrint=False, name='ls
     ## return training and validation error
     return numpy.array([tErr, vErr])
 
-def lambdaSweep():
+def lambdaSweep(problemName='ls'):
     problemClass = "lr"
     varName = "$\lambda$"
 
@@ -70,25 +73,31 @@ def lambdaSweep():
     lambdaVals = numpy.array([0] + [10**i for i in numpy.arange(-4,2.5,0.2)])
 
     ## first try with linear basis functions
-    resultsLin = numpy.array([LRTrain({'lamduh':lamduh}, problemClass=problemClass,basisfunc='lin', plot=False, printInfo=False)() for lamduh in lambdaVals])
+    resultsLin = numpy.array([LRTrain({'lamduh':lamduh}, problemClass=problemClass,basisfunc='lin', plot=False, printInfo=False, dataSetName=problemName, meshSize=200.)() for lamduh in lambdaVals])
     trainingErrLin = resultsLin[:,0]
     validationErrLin = resultsLin[:,1]
-    plotTVError(lambdaVals, trainingErrLin, validationErrLin, problemClass=problemClass, varName=varName, linQuad='linear', extra='')
+    gm = resultsLin[:,2]
+    plotTVError(lambdaVals, trainingErrLin, validationErrLin, gm=gm, problemClass=problemClass, varName=varName, linQuad='linear', extra=' for ' + problemName.upper() + " data")
 
     # now try with quadratic basis function
-    resultsQuad = numpy.array([LRTrain({'lamduh':lamduh}, basisfunc='quad', plot=False, printInfo=False)() for lamduh in lambdaVals])
+    resultsQuad = numpy.array([LRTrain({'lamduh':lamduh}, problemClass=problemClass,basisfunc='quad', plot=False, printInfo=False, dataSetName=problemName, meshSize=200.)() for lamduh in lambdaVals])
     trainingErrQuad = resultsQuad[:,0]
     validationErrQuad = resultsQuad[:,1]
-    plotTVError(lambdaVals, trainingErrQuad, validationErrQuad, problemClass=problemClass, varName=varName, linQuad='quadratic', extra='')
+    gm = resultsQuad[:,2]
+
+    plotTVError(lambdaVals, trainingErrQuad, validationErrQuad, gm=gm, problemClass=problemClass, varName=varName, linQuad='quadratic', extra=' for ' + problemName.upper() + " data")
 
     return lambdaVals, trainingErrLin, validationErrLin, trainingErrQuad, validationErrQuad
 
 if __name__ == '__main__':
-    name='ls'
+    #name='ls'
     ## a simple training test
-    print LRTrain({'lamduh':0.01}, printInfo=True)()
+    print LRTrain({'lamduh':0}, problemClass='lr',basisfunc='quad', plot=True, dataSetName='nls', meshSize=200., printInfo=True)()
+    print LRTrain({'lamduh':0.001}, problemClass='lr',basisfunc='quad', plot=True, dataSetName='nls', meshSize=200., printInfo=True)()
 
     ## the good stuff
-    lambdaSweep()
+    #lambdaSweep('ls')
+    #lambdaSweep('nls')
+    #lambdaSweep('nonlin')
     pl.show()
 
